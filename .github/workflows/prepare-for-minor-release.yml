@@ -34,9 +34,9 @@ jobs:
           echo "previous_version=[$previous_version]" >> $GITHUB_ENV
       - name: Set previous_version as output
         id: set_output
-        run: echo "previous_version=[$(echo $previous_version)]" | tr -d ' ' >> $GITHUB_ENV
-    outputs:
-      previous_version: ${{ steps.set_output.outputs.previous_version }}
+        run: echo ::set-output name=previous_version::$(echo "[$previous_version]" | tr -d ' ')
+      outputs:
+        previous_version: ${{ steps.set_output.outputs.previous_version }}
 
   update_previous_release_branches:
     needs: draft-new-release
