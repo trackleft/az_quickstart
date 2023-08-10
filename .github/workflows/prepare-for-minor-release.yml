@@ -30,8 +30,9 @@ jobs:
         run: git checkout -b ${{ inputs.release_branch_name }}
       - name: Get previous versions
         run: |
-          previous_version=$(git branch -a | grep -E '^\s*2\.\d+\.x' | grep -v 'remotes/' | sed 's/^\s*//; s/$//')
-          echo "previous_version=[\"$previous_version\"]" >> $GITHUB_ENV
+          previous_versions=$(git branch -a | grep -E '^\s*2\.\d+\.x' | grep -v 'remotes/' | awk '{$1=$1;print}' | tr '\n' ',' | sed 's/,$//')
+          json_previous_versions="[\"${previous_versions//,/\",\"}\"]"
+          echo "previous_version=$json_previous_versions" >> $GITHUB_ENV
       - name: Set previous_version as output
         id: set_output
         run: echo ::set-output name=previous_version::$(echo $previous_version | sed 's/ /","/g')
