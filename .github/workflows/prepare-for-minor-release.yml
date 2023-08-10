@@ -22,10 +22,8 @@ jobs:
       - name: Create version contstraint string for next release branch alias.
         id: alias-version-constraint
         run: |
-          echo "NEXT_RELEASE_VERSION_CONSTRAINT=$NEXT_RELEASE_VERSION_CONSTRAINT" >> $GITHUB_OUTPUT
+          echo "NEXT_RELEASE_VERSION_CONSTRAINT=$(echo ${{ inputs.release_branch_name }} | sed 's/\.x/~/')" >> $GITHUB_OUTPUT
           echo "$NEXT_RELEASE_VERSION_CONSTRAINT" >> $GITHUB_STEP_SUMMARY
-        env:
-          NEXT_RELEASE_VERSION_CONSTRAINT: $(echo ${{ inputs.release_branch_name }} | sed 's/\.x/~/')
 
   draft_new_release:
     name: Draft a new release
