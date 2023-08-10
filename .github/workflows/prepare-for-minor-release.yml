@@ -1,0 +1,41 @@
+name: Prepare repository for new minor release
+run-name: Prepare az_quickstart for the `${{ inputs.short_release_name }}` release.
+on:
+  workflow_dispatch:
+    inputs:
+      short_release_name:
+        description: 'A short name for the release (e.g. 1.0.0)'
+        required: true
+      packagist_release_name:
+        description: 'A name for the release that can be used on Packagist (e.g. 1.0.0-dev)'
+        required: true
+env:
+  ALL_PREVIOUS_RELEASE_BRANCHES:
+     - 2.0.x
+     - 2.1.x
+     - 2.2.x
+     - 2.3.x
+     - 2.4.x
+     - 2.5.x
+     - 2.6.x
+     - 2.7.x
+
+jobs:
+  print_inputs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print inputs
+        run: |
+          echo "short_release_name: ${{ inputs.short_release_name }}"
+          echo "packagist_release_name: ${{ inputs.packagist_release_name }}"
+  update_previous_release_branches:
+    strategy:
+      matrix:
+        version: ${{ env.ALL_PREVIOUS_RELEASE_BRANCHES }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ matrix.version }}
+      - uses: php-actions/composer@v6
+        with:
+          args: config extra.branch-alias.dev-main ${{ inputs.packagist_release_name }}
