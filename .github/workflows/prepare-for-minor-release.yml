@@ -56,10 +56,8 @@ jobs:
 
     - name: Update DDev config in release branch
       run: |
-        BASE_VERSION_PATTERN="0,/main/s//"
         NEW_VERSION=${{ needs.branch_name_prep.outputs.next_release_branch_alias_constraint}}
-        sed -i "s/$BASE_VERSION_PATTERN/$NEW_VERSION/" .ddev/commands/web/install
-
+        sed -i "0,/main/s//$NEW_VERSION/" .ddev/commands/web/install
     - name: Update Security workflow yml in release branch
       run: |
         BASE_VERSION_PATTERN="2\.[0-9]\+\.x"
