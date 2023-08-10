@@ -6,12 +6,6 @@ on:
       release_branch_name:
         description: The name of the release branch (e.g. 2.8.x)
         required: true
-      short_release_name:
-        description: A short name for the release (e.g. 1.0.0)
-        required: true
-      packagist_release_name:
-        description: A name for the release that can be used on Packagist (e.g. 1.0.0-dev)
-        required: true
 jobs:
   print_inputs:
     runs-on: ubuntu-latest
@@ -19,38 +13,103 @@ jobs:
       - name: Print inputs
         run: |
           echo "release_branch_name: ${{ inputs.release_branch_name }}"
-          echo "short_release_name: ${{ inputs.short_release_name }}"
-          echo "packagist_release_name: ${{ inputs.packagist_release_name }}"
+  branch_name_prep:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    outputs:
+      next_release_branch_alias_constraint: ${{ steps.alias-version-constraint.outputs.NEXT_RELEASE_VERSION_CONSTRAINT }}
+    steps:
+      - name: Create version contstraint string for next release branch alias.
+        id: alias-version-constraint
+        run: |
+          echo "NEXT_RELEASE_VERSION_CONSTRAINT=${{ inputs.release_branch_name }} | sed 's/\.x/~/'" >> "$GITHUB_OUTPUT"
+          echo $NEXT_RELEASE_VERSION_CONSTRAINT >> $GITHUB_STEP_SUMMARY
+
   draft-new-release:
     name: Draft a new release
     runs-on: ubuntu-latest
-    outputs:
-      previous_version: ${{ steps.get-previous-versions.outputs.previous_version }}
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: Get previous versions
-        id: get-previous-versions
-        run: |
-          PREVIOUS_VERSIONS=$(git branch -a | grep -E '^\s*remotes/origin/2\.\d+\.x' | awk '{$1=$1;print}' | sed 's/remotes\/origin\///' | tr '\n' ',' | sed 's/,$//')
-          echo $PREVIOUS_VERSIONS
-      - name: Create release branch
-        run: git checkout -b ${{ inputs.release_branch_name }}
+    needs: branch_name_prep
+
+    - name: Checkout az_quickstart
+      uses: actions/checkout@v3
+      with:
+        repository: trackleft/az_quickstart
+        ref: main
+
+    - name: Checkout az-quickstart-scaffolding
+      uses: actions/checkout@v3
+      with:
+        repository: trackleft/az-quickstart-scaffolding
+        ref: main
+
+    - name: Update version constraint in az-quickstart-scaffolding main branch
+      run: |
+        cd az-quickstart-scaffolding
+
+    - name: Update composer.json requirement
+      run: |
+        cd az-quickstart-scaffolding
+        jq '.require["az-digital/az_quickstart"] = "${{ needs.branch_name_prep.outputs.next_release_branch_alias_constraint"' composer.json > composer_temp.json
+        mv composer_temp.json composer.json
+
+    - name: Set up git
+      run: |
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+
+    - name: Create new minor release branch
+      run: |
+        # Create new branches in both repositories
+        cd az_quickstart
+        git checkout -b ${{ inputs.release_branch_name }}
+        cd ../
+
+        cd az-quickstart-scaffolding
+        git checkout -b ${{ inputs.release_branch_name }}
+        cd ../
+
+    - uses: php-actions/composer@v6
+      with:
+        command: config extra.branch-alias.dev-main ${{ inputs.release_branch_name }}-dev
 
   update_previous_release_branches:
     needs: draft-new-release
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        previous_version: ${{fromJson(needs.draft-new-release.outputs.previous_version)}}
+        previous_version: [2.7.x, 2.6.x, 2.5.x, 2.4.x, 2.3.x, 2.2.x, 2.1.x, 2.0.x]
     steps:
       - name: Update previous release branch `${{ matrix.previous_version }}`
         uses: actions/checkout@v3
         with:
           ref: ${{ matrix.previous_version }}
+      - name: Set up Git
+        run: |
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
       - uses: php-actions/composer@v6
         with:
-          command: config extra.branch-alias.dev-main ${{ inputs.packagist_release_name }}
+          command: config extra.branch-alias.dev-main ${{ inputs.release_branch_name }}-dev
+      - name: Show git status
+        run: |
+          git status
       - name: Show git diff
         run: git diff
+
+  finalize:
+    needs: update_previous_release_branches
+    runs-on: ubuntu-latest
+    steps:
+      - name: Commit and push changes
+        run: |
+          cd az_quickstart
+          git add .   # or specify the files you changed like git add composer.json
+          git commit -m "All required changes for new release"
+          git push origin ${{ inputs.release_branch_name }}  # push changes to the new branch
+
+          cd ../az-quickstart-scaffolding
+          git add .   # or specify the files you changed like git add composer.json
+          git commit -m "All required changes for new release"
+          git push origin ${{ inputs.release_branch_name }}  # push changes to the new branch
+
+          cd ../
