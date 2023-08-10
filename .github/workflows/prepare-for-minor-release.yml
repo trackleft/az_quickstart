@@ -34,10 +34,8 @@ jobs:
       - name: Get previous versions
         id: get-previous-versions
         run: |
-          previous_versions=$(git branch -a | grep -E '^\s*2\.\d+\.x' | grep -v 'remotes/' | awk '{$1=$1;print}' | tr '\n' ',' | sed 's/,$//')
-          echo "Debug: $previous_versions"
+          previous_versions=$(git branch -a | grep -E '^\s*origin/2\.\d+\.x' | grep -v 'remotes/' | awk '{$1=$1;print}' | sed 's/origin\///' | tr '\n' ',' | sed 's/,$//')
           json_previous_versions="[\"${previous_versions//,/\",\"}\"]"
-          echo "Debug: $json_previous_versions"
           echo "previous_version=toJson($json_previous_versions)" >> "$GITHUB_OUTPUT"
       - name: Create release branch
         run: git checkout -b ${{ inputs.release_branch_name }}
