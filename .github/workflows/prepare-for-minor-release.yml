@@ -1,5 +1,5 @@
 name: Prepare repository for new minor release
-run-name: Prepare az_quickstart for the `${{ inputs.short_release_name }}` release.
+run-name: Prepare az_quickstart for the `${{ inputs.release_branch_name }}` release.
 on:
   workflow_dispatch:
     inputs:
