@@ -19,13 +19,18 @@ jobs:
     outputs:
       next_release_branch_alias_constraint: ${{ steps.alias-version-constraint.outputs.NEXT_RELEASE_VERSION_CONSTRAINT }}
     steps:
-      - name: Create version contstraint string for next release branch alias.
+      - name: Create version contstraint string for next release branch alias string.
         id: alias-version-constraint
         run: |
           NEXT_RELEASE_VERSION_CONSTRAINT=$(echo ${{ inputs.release_branch_name }} | sed 's/\(.*\)\.x/~\1/')
           echo "NEXT_RELEASE_VERSION_CONSTRAINT=${NEXT_RELEASE_VERSION_CONSTRAINT}" >> $GITHUB_OUTPUT
-          echo "$NEXT_RELEASE_VERSION_CONSTRAINT" >> $GITHUB_STEP_SUMMARY
-
+          echo "Next release version constraint: $NEXT_RELEASE_VERSION_CONSTRAINT" >> $GITHUB_STEP_SUMMARY
+      - name: Create the composer main branch alias string.
+        id: alias-main-branch
+        run: |
+          MAIN_BRANCH_ALIAS="${{ inputs.release_branch_name }}-dev"
+          echo "MAIN_BRANCH_ALIAS=${MAIN_BRANCH_ALIAS}" >> $GITHUB_OUTPUT
+          echo "Main branch alias: $MAIN_BRANCH_ALIAS" >> $GITHUB_STEP_SUMMARY
   draft_new_release:
     name: Draft a new release
     runs-on: ubuntu-latest
