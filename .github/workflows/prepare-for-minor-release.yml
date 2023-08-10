@@ -34,7 +34,7 @@ jobs:
         run: |
           previous_versions=$(git branch -a | grep -E '^\s*2\.\d+\.x' | grep -v 'remotes/' | awk '{$1=$1;print}' | tr '\n' ',' | sed 's/,$//')
           json_previous_versions="[\"${previous_versions//,/\",\"}\"]"
-          echo "previous_version=$json_previous_versions" >> $GITHUB_ENV
+          echo "previous_version=$json_previous_versions" >> "$GITHUB_OUTPUT"
           echo "Debug: $json_previous_versions"
 
       - name: Create release branch
