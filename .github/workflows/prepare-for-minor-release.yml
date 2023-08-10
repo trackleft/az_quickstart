@@ -66,21 +66,18 @@ jobs:
 
     - name: Update Create Release workflow yml in release branch
       run: |
-        BASE_VERSION_PATTERN="2\.[0-9]\+\.x"
-        NEW_VERSION=${{ needs.branch_name_prep.outputs.next_release_branch_alias_constraint}}
-        sed -ir "s/$BASE_VERSION_PATTERN/$NEW_VERSION/g" .github/workflows/create-release.yml
+        NEW_VERSION=${{ inputs.release_branch_name }}
+        sed -i "s|git clone https://github.com/az-digital/az-quickstart-scaffolding.git az_quickstart|git clone -b $NEW_VERSION https://github.com/az-digital/az-quickstart-scaffolding.git az_quickstart|" .github/workflows/create-release.yml
 
     - name: Update Lando config in release branch
       run: |
-        BASE_VERSION_PATTERN="2\.[0-9]\+\.x"
-        NEW_VERSION=${{ needs.branch_name_prep.outputs.next_release_branch_alias_constraint}}
-        sed -ir "s/$BASE_VERSION_PATTERN/$NEW_VERSION/g" .lando.yml
+        NEW_VERSION=${{ inputs.release_branch_name }}
+        sed -i "s/SCAFFOLD_BRANCH=main/SCAFFOLD_BRANCH=$NEW_VERSION/g" .lando.yml
 
     - name: Update Probo config in release branch
       run: |
-        BASE_VERSION_PATTERN="2\.[0-9]\+\.x"
-        NEW_VERSION=${{ needs.branch_name_prep.outputs.next_release_branch_alias_constraint}}
-        sed -ir "s/$BASE_VERSION_PATTERN/$NEW_VERSION/g" .probo.yaml
+        NEW_VERSION=${{ inputs.release_branch_name }}
+        sed -i "s/SCAFFOLD_BRANCH=main/SCAFFOLD_BRANCH=$NEW_VERSION/g" .probo.yaml
 
     - uses: php-actions/composer@v6
       with:
