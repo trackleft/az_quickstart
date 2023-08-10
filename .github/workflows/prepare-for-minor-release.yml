@@ -44,11 +44,11 @@ jobs:
         repository: trackleft/az_quickstart
         ref: main
 
-    - name: Update composer.json requirement
-      run: |
-        cd az-quickstart-scaffolding
-        jq '.require["az-digital/az_quickstart"] = "${{ needs.branch_name_prep.outputs.next_release_branch_alias_constraint}}"' composer.json > composer_temp.json
-        mv composer_temp.json composer.json
+    # - name: Update composer.json requirement
+    #   run: |
+    #     cd az-quickstart-scaffolding
+    #     jq '.require["az-digital/az_quickstart"] = "${{ needs.branch_name_prep.outputs.next_release_branch_alias_constraint}}"' composer.json > composer_temp.json
+    #     mv composer_temp.json composer.json
 
     - name: Check out release branch
       run: |
