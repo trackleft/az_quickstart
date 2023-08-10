@@ -18,29 +18,26 @@ jobs:
     steps:
       - name: Print inputs
         run: |
-          echo "short_release_name: ${{ inputs.release_branch_name }}"
+          echo "release_branch_name: ${{ inputs.release_branch_name }}"
           echo "short_release_name: ${{ inputs.short_release_name }}"
           echo "packagist_release_name: ${{ inputs.packagist_release_name }}"
   draft-new-release:
     name: Draft a new release
     runs-on: ubuntu-latest
-    outputs:
-      previous_version: ${{ steps.set_output.outputs.previous_version }}
-
     steps:
       - uses: actions/checkout@v3
       - name: Create release branch
         run: git checkout -b ${{ inputs.release_branch_name }}
       - name: Get previous versions
-        run: >
-          previous_version=$(git branch -a | grep -E '^\s*2\.\d+\.x' | grep -v
-          'remotes/' | sed 's/^\s*/"&/; s/$/&",/' | tr -d '\n' | sed 's/,$//')
-
-          echo "previous_version=[$previous_version]" >> $GITHUB_ENV
+        run: |
+          previous_version=$(git branch -a | grep -E '^\s*2\.\d+\.x' | grep -v 'remotes/' | sed 's/^\s*//; s/$//')
+          echo "previous_version=[\"$previous_version\"]" >> $GITHUB_ENV
       - name: Set previous_version as output
         id: set_output
-        run: echo ::set-output name=previous_version::$(echo "[$previous_version]" | tr
-          -d ' ')
+        run: echo ::set-output name=previous_version::$(echo $previous_version | sed 's/ /","/g')
+    outputs:
+      previous_version: ${{ steps.set_output.outputs.previous_version }}
+
   update_previous_release_branches:
     needs: draft-new-release
     runs-on: ubuntu-latest
