@@ -33,7 +33,6 @@ jobs:
       - name: Get previous versions
         id: get-previous-versions
         run: |
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
           git branch -a
           previous_versions=$(git branch -a | grep -E '^\s*remotes/origin/2\.\d+\.x' | awk '{$1=$1;print}' | sed 's/remotes\/origin\///' | tr '\n' ',' | sed 's/,$//')
           echo "Detected previous versions: $previous_versions"
