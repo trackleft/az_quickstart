@@ -3,6 +3,9 @@ run-name: Prepare az_quickstart for the `${{ inputs.short_release_name }}` relea
 on:
   workflow_dispatch:
     inputs:
+      release_branch_name:
+        description: 'The name of the release branch (e.g. 2.8.x)'
+        required: true
       short_release_name:
         description: 'A short name for the release (e.g. 1.0.0)'
         required: true
@@ -15,6 +18,7 @@ jobs:
     steps:
       - name: Print inputs
         run: |
+          echo "short_release_name: ${{ inputs.release_branch_name }}"
           echo "short_release_name: ${{ inputs.short_release_name }}"
           echo "packagist_release_name: ${{ inputs.packagist_release_name }}"
   draft-new-release:
@@ -22,10 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
-      - name: Create release branch
-        run: git checkout -b ${{ inputs.short_release_name }}
-
+        with:
+          ref: ${{ inputs.release_branch_name }}
   update_previous_release_branches:
     name: "Update previous release branch `${{ matrix.previous_version }}`"
     strategy:
