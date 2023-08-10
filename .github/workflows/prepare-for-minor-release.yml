@@ -33,7 +33,8 @@ jobs:
       - name: Get previous versions
         id: get-previous-versions
         run: |
-          git branch -a | grep -E '^\s*remotes/origin/2\.\d+\.x' | awk '{$1=$1;print}' | sed 's/remotes\/origin\///' | tr '\n' ',' | sed 's/,$//'
+          PREVIOUS_VERSIONS=$(git branch -a | grep -E '^\s*remotes/origin/2\.\d+\.x' | awk '{$1=$1;print}' | sed 's/remotes\/origin\///' | tr '\n' ',' | sed 's/,$//')
+          echo $PREVIOUS_VERSIONS
       - name: Create release branch
         run: git checkout -b ${{ inputs.release_branch_name }}
 
