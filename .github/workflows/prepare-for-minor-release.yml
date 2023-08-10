@@ -9,17 +9,6 @@ on:
       packagist_release_name:
         description: 'A name for the release that can be used on Packagist (e.g. 1.0.0-dev)'
         required: true
-env:
-  ALL_PREVIOUS_RELEASE_BRANCHES:
-     - 2.0.x
-     - 2.1.x
-     - 2.2.x
-     - 2.3.x
-     - 2.4.x
-     - 2.5.x
-     - 2.6.x
-     - 2.7.x
-
 jobs:
   print_inputs:
     runs-on: ubuntu-latest
@@ -28,14 +17,23 @@ jobs:
         run: |
           echo "short_release_name: ${{ inputs.short_release_name }}"
           echo "packagist_release_name: ${{ inputs.packagist_release_name }}"
+  draft-new-release:
+    name: "Draft a new release"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Create release branch
+        run: git checkout -b ${{ inputs.short_release_name }}
+
   update_previous_release_branches:
     strategy:
       matrix:
-        version: ${{ env.ALL_PREVIOUS_RELEASE_BRANCHES }}
+        previous_version: [2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7]
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: ${{ matrix.version }}
+          ref: ${{ matrix.previous_version }}
       - uses: php-actions/composer@v6
         with:
           args: config extra.branch-alias.dev-main ${{ inputs.packagist_release_name }}
