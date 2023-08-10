@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       release_branch_name:
-        description: 'The name of the release branch (e.g. 2.8.x)'
+        description: The name of the release branch (e.g. 2.8.x)
         required: true
       short_release_name:
-        description: 'A short name for the release (e.g. 1.0.0)'
+        description: A short name for the release (e.g. 1.0.0)
         required: true
       packagist_release_name:
-        description: 'A name for the release that can be used on Packagist (e.g. 1.0.0-dev)'
+        description: A name for the release that can be used on Packagist (e.g. 1.0.0-dev)
         required: true
 jobs:
   print_inputs:
@@ -22,22 +22,24 @@ jobs:
           echo "short_release_name: ${{ inputs.short_release_name }}"
           echo "packagist_release_name: ${{ inputs.packagist_release_name }}"
   draft-new-release:
-    name: "Draft a new release"
+    name: Draft a new release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Create release branch
         run: git checkout -b ${{ inputs.release_branch_name }}
       - name: Get previous versions
-        run: |
-          previous_version=$(git branch -a | grep -E '^\s*2\.\d+\.x' | grep -v 'remotes/' | sed 's/^\s*/"&/; s/$/&",/' | tr -d '\n' | sed 's/,$//')
+        run: >
+          previous_version=$(git branch -a | grep -E '^\s*2\.\d+\.x' | grep -v
+          'remotes/' | sed 's/^\s*/"&/; s/$/&",/' | tr -d '\n' | sed 's/,$//')
+
           echo "previous_version=[$previous_version]" >> $GITHUB_ENV
       - name: Set previous_version as output
         id: set_output
-        run: echo ::set-output name=previous_version::$(echo "[$previous_version]" | tr -d ' ')
-      outputs:
-        previous_version: ${{ steps.set_output.outputs.previous_version }}
-
+        run: echo ::set-output name=previous_version::$(echo "[$previous_version]" | tr
+          -d ' ')
+        outputs:
+          previous_version: ${{ steps.set_output.outputs.previous_version }}
   update_previous_release_branches:
     needs: draft-new-release
     runs-on: ubuntu-latest
@@ -45,7 +47,7 @@ jobs:
       matrix:
         previous_version: ${{fromJson(needs.draft-new-release.outputs.previous_version)}}
     steps:
-      - name: "Update previous release branch `${{ matrix.previous_version }}`"
+      - name: Update previous release branch `${{ matrix.previous_version }}`
         uses: actions/checkout@v3
         with:
           ref: ${{ matrix.previous_version }}
