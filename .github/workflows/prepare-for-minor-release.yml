@@ -44,20 +44,19 @@ jobs:
     outputs:
       previous_version: ${{ steps.set_output.outputs.previous_version }}
 
-
   update_previous_release_branches:
-    - name: "Update previous release branch `${{ matrix.previous_version }}`"
-      strategy:
-        matrix:
+    needs: draft-new-release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
         previous_version: ${{fromJson(needs.draft-new-release.outputs.previous_version)}}
-      runs-on: ubuntu-latest
-      needs: draft-new-release
-      steps:
-        - uses: actions/checkout@v3
-          with:
-            ref: ${{ matrix.previous_version }}
-        - uses: php-actions/composer@v6
-          with:
-            command: config extra.branch-alias.dev-main ${{ inputs.packagist_release_name }}
-        - name: Show git diff
-          run: git diff
+    steps:
+      - name: "Update previous release branch `${{ matrix.previous_version }}`"
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ matrix.previous_version }}
+      - uses: php-actions/composer@v6
+        with:
+          command: config extra.branch-alias.dev-main ${{ inputs.packagist_release_name }}
+      - name: Show git diff
+        run: git diff
