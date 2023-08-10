@@ -26,14 +26,14 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       previous_version: ${{ steps.get-previous-versions.outputs.previous_version }}
-
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
       - name: Get previous versions
         id: get-previous-versions
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
         run: |
+          git branch -a
           previous_versions=$(git branch -a | grep -E '^\s*remotes/origin/2\.\d+\.x' | awk '{$1=$1;print}' | sed 's/remotes\/origin\///' | tr '\n' ',' | sed 's/,$//')          json_previous_versions="[\"${previous_versions//,/\",\"}\"]"
           json_previous_versions="[\"${previous_versions//,/\",\"}\"]"
           echo "previous_version=$json_previous_versions" >> $GITHUB_OUTPUT
