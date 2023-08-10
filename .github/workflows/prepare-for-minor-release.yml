@@ -26,8 +26,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          ref: ${{ inputs.release_branch_name }}
+      - name: Create release branch
+        run: git checkout -b ${{ inputs.release_branch_name }}
+
   update_previous_release_branches:
     name: "Update previous release branch `${{ matrix.previous_version }}`"
     strategy:
@@ -40,4 +41,4 @@ jobs:
           ref: ${{ matrix.previous_version }}
       - uses: php-actions/composer@v6
         with:
-          args: config extra.branch-alias.dev-main ${{ inputs.packagist_release_name }}
+          command: config extra.branch-alias.dev-main ${{ inputs.packagist_release_name }}
