@@ -58,31 +58,31 @@ jobs:
       run: |
         BASE_VERSION_PATTERN="2\.[0-9]\+\.x"
         NEW_VERSION=${{ needs.branch_name_prep.outputs.next_release_branch_alias_constraint}}
-        sed -i "s/$BASE_VERSION_PATTERN/$NEW_VERSION/g" .ddev/commands/web/install
+        sed -i "s/${BASE_VERSION_PATTERN}/${NEW_VERSION}/g" .ddev/commands/web/install
 
     - name: Update Security workflow yml in release branch
       run: |
         BASE_VERSION_PATTERN="2\.[0-9]\+\.x"
         NEW_VERSION=${{ needs.branch_name_prep.outputs.next_release_branch_alias_constraint}}
-        sed -i "s/$BASE_VERSION_PATTERN/$NEW_VERSION/g" .github/workflows/security.yml
+        sed -i "s/${BASE_VERSION_PATTERN}/${NEW_VERSION}/g" .github/workflows/security.yml
 
     - name: Update Create Release workflow yml in release branch
       run: |
         BASE_VERSION_PATTERN="2\.[0-9]\+\.x"
         NEW_VERSION=${{ needs.branch_name_prep.outputs.next_release_branch_alias_constraint}}
-        sed -i "s/$BASE_VERSION_PATTERN/$NEW_VERSION/g" .github/workflows/create-release.yml
+        sed -i "s/${BASE_VERSION_PATTERN}/${NEW_VERSION}/g" .github/workflows/create-release.yml
 
     - name: Update Lando config in release branch
       run: |
         BASE_VERSION_PATTERN="2\.[0-9]\+\.x"
         NEW_VERSION=${{ needs.branch_name_prep.outputs.next_release_branch_alias_constraint}}
-        sed -i "s/$BASE_VERSION_PATTERN/$NEW_VERSION/g" .lando.yml
+        sed -i "s/${BASE_VERSION_PATTERN}/${NEW_VERSION}/g" .lando.yml
 
     - name: Update Probo config in release branch
       run: |
         BASE_VERSION_PATTERN="2\.[0-9]\+\.x"
         NEW_VERSION=${{ needs.branch_name_prep.outputs.next_release_branch_alias_constraint}}
-        sed -i "s/$BASE_VERSION_PATTERN/$NEW_VERSION/g" .probo.yaml
+        sed -i "s/${BASE_VERSION_PATTERN}/${NEW_VERSION}/g" .probo.yaml
 
     - uses: php-actions/composer@v6
       with:
