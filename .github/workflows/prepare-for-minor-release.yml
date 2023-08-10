@@ -35,7 +35,8 @@ jobs:
         id: get-previous-versions
         run: |
           previous_versions=$(git branch -a | grep -E '^\s*remotes/origin/2\.\d+\.x' | awk '{$1=$1;print}' | sed 's/remotes\/origin\///' | tr '\n' ',' | sed 's/,$//')          json_previous_versions="[\"${previous_versions//,/\",\"}\"]"
-          echo "previous_version=$(toJSON($json_previous_versions))" >> $GITHUB_OUTPUT
+          json_previous_versions="[\"${previous_versions//,/\",\"}\"]"
+          echo "previous_version=$json_previous_versions" >> $GITHUB_OUTPUT
       - name: Create release branch
         run: git checkout -b ${{ inputs.release_branch_name }}
 
