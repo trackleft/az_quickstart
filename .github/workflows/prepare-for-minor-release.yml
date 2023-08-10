@@ -50,9 +50,9 @@ jobs:
     #     jq '.require["az-digital/az_quickstart"] = "${{ needs.branch_name_prep.outputs.next_release_branch_alias_constraint}}"' composer.json > composer_temp.json
     #     mv composer_temp.json composer.json
 
-    - name: Check out release branch
+    - name: Create and check out release branch
       run: |
-        git checkout ${{ inputs.release_branch_name }}
+        git checkout -b ${{ inputs.release_branch_name }}
 
     - name: Update DDev config in release branch
       run: |
