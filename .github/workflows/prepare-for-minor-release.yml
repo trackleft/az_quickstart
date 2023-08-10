@@ -24,20 +24,19 @@ jobs:
   draft-new-release:
     name: Draft a new release
     runs-on: ubuntu-latest
+    outputs:
+      previous_version: ${{ steps.get-previous-versions.outputs.previous_version }}
+
     steps:
       - uses: actions/checkout@v3
-      - name: Create release branch
-        run: git checkout -b ${{ inputs.release_branch_name }}
       - name: Get previous versions
+        id: get-previous-versions
         run: |
           previous_versions=$(git branch -a | grep -E '^\s*2\.\d+\.x' | grep -v 'remotes/' | awk '{$1=$1;print}' | tr '\n' ',' | sed 's/,$//')
           json_previous_versions="[\"${previous_versions//,/\",\"}\"]"
           echo "previous_version=$json_previous_versions" >> $GITHUB_ENV
-      - name: Set previous_version as output
-        id: set_output
-        run: echo ::set-output name=previous_version::$(echo $previous_version | sed 's/ /","/g')
-    outputs:
-      previous_version: ${{ steps.set_output.outputs.previous_version }}
+      - name: Create release branch
+        run: git checkout -b ${{ inputs.release_branch_name }}
 
   update_previous_release_branches:
     needs: draft-new-release
