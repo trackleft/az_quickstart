@@ -27,10 +27,11 @@ jobs:
         run: git checkout -b ${{ inputs.short_release_name }}
 
   update_previous_release_branches:
+    name: "Update previous release branch `${{ matrix.previous_version }}`"
     strategy:
-      runs-on: ubuntu-latest
       matrix:
         previous_version: [2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
