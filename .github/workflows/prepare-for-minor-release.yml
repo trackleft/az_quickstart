@@ -33,8 +33,7 @@ jobs:
       - name: Get previous versions
         id: get-previous-versions
         run: |
-          $(git branch -a | grep -E '^\s*remotes/origin/2\.\d+\.x')
-          previous_versions=$(git branch -a | grep -E '^\s*remotes/origin/2\.\d+\.x' | awk '{$1=$1;print}' | sed 's/remotes\/origin\///' | tr '\n' ',' | sed 's/,$//')
+          git branch -a | grep -E '^\s*remotes/origin/2\.\d+\.x' | awk '{$1=$1;print}' | sed 's/remotes\/origin\///' | tr '\n' ',' | sed 's/,$//'          previous_versions=$(git branch -a | grep -E '^\s*remotes/origin/2\.\d+\.x' | awk '{$1=$1;print}' | sed 's/remotes\/origin\///' | tr '\n' ',' | sed 's/,$//')
           echo "Detected previous versions: $previous_versions"
           json_previous_versions="[\"${previous_versions//,/\",\"}\"]"
           echo "Debug: $json_previous_versions"
