@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_branch_name:
-        description: The name of the release branch (e.g. 2.8.x)
+        description: The name of the new release branch (e.g. 2.8.x) to create.
         required: true
 jobs:
   print_inputs:
@@ -131,6 +131,7 @@ jobs:
   update_previous_release_branches:
     needs: prepare_for_new_minor_release
     runs-on: ubuntu-latest
+    run-name: Update `${{ matrix.previous_version }}` release branch.
     strategy:
       matrix:
         previous_version: [2.7.x, 2.6.x, 2.5.x, 2.4.x, 2.3.x, 2.2.x, 2.1.x, 2.0.x]
