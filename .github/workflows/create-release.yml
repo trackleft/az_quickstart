@@ -50,7 +50,7 @@ jobs:
         with:
           tag_name: ${{ github.event.inputs.version }}
           name: ${{ github.event.inputs.version }}
-          commitish: ${{ env.RELEASE_SHA }}
+          target_commitish: ${{ env.RELEASE_SHA }}
           draft: false
           prerelease: false
           files: |
