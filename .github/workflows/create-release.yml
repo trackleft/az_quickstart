@@ -61,8 +61,8 @@ jobs:
       - name: Tar Assets
         run: |
           tar --exclude '*.git*' -c -z -f az_quickstart.tar.gz az_quickstart
-      - name: Upload Zip Assets
-        id: upload-zip-asset
+      - name: Upload Archive Assets
+        id: upload-archive-asset
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -80,7 +80,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Notify dependencies
-        uses: peter-evans/repository-dispatch@1708dda5703a768a0fb0ef6a7a03a0c3805ebc59
+        uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.REPO_DISPATCH_TOKEN }}
           repository: ${{ matrix.repo }}
