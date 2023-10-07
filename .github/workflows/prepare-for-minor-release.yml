@@ -68,6 +68,7 @@ jobs:
       with:
         repository: trackleft/az_quickstart
         ref: main
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Create and check out release branch
       run: |
