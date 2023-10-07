@@ -127,6 +127,7 @@ jobs:
         branch: ${{ inputs.release_branch_name }}-prepare-for-minor-release
         base: ${{ inputs.release_branch_name }}
         delete-branch: true
+        token: ${{ secrets.GITHUB_TOKEN }}
         labels: |
           ${{ inputs.release_branch_name }} only
         add-paths: |
@@ -168,6 +169,7 @@ jobs:
           branch: ${{ matrix.previous_version }}-update-for-${{ inputs.release_branch_name }}
           base: ${{ matrix.previous_version }}
           delete-branch: true
+          token: ${{ secrets.GITHUB_TOKEN }}
           labels: |
             ${{ matrix.previous_version }} only
           add-paths: |
