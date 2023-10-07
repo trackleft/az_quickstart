@@ -15,22 +15,30 @@ jobs:
           echo "release_branch_name: ${{ inputs.release_branch_name }}"
 
   branch_name_prep:
-    timeout-minutes: 60
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     outputs:
-      next_release_branch_alias_constraint: ${{ steps.alias-version-constraint.outputs.NEXT_RELEASE_VERSION_CONSTRAINT }}
-      main_branch_alias: ${{ steps.alias-main-branch.outputs.MAIN_BRANCH_ALIAS }}
+      next_minor_release: ${{ steps.define-version-variables.outputs.NEXT_MINOR_RELEASE }}
+      next_release_branch_alias_constraint: ${{ steps.define-version-variables.outputs.NEXT_RELEASE_VERSION_CONSTRAINT }}
+      this_release_branch_alias_constraint: ${{ steps.define-version-variables.outputs.THIS_RELEASE_VERSION_CONSTRAINT }}
+      main_branch_alias: ${{ steps.define-version-variables.outputs.MAIN_BRANCH_ALIAS }}
     steps:
-      - name: Create version contstraint string for next release branch alias string.
-        id: alias-version-constraint
+      - name: Define version variables
+        id: define-version-variables
         run: |
-          NEXT_RELEASE_VERSION_CONSTRAINT=$(echo ${{ inputs.release_branch_name }} | sed 's/\(.*\)\.x/~\1/')
+          delimiter=.
+          version_parts=($(echo ${{ inputs.release_branch_name }} | tr $delimiter '\n'))
+          version_parts[1]=$((version_parts[1]+1))
+          NEXT_MINOR_RELEASE=$(IFS=$delimiter ; echo "${version_parts[*]}" | sed 's/\(.*\)\.x/\1/')
+          NEXT_RELEASE_VERSION_CONSTRAINT="~${NEXT_MINOR_RELEASE}"
+          echo "NEXT_MINOR_RELEASE=${NEXT_MINOR_RELEASE}" >> $GITHUB_OUTPUT
           echo "NEXT_RELEASE_VERSION_CONSTRAINT=${NEXT_RELEASE_VERSION_CONSTRAINT}" >> $GITHUB_OUTPUT
+          echo "Next minor release: $NEXT_MINOR_RELEASE" >> $GITHUB_STEP_SUMMARY
           echo "Next release version constraint: $NEXT_RELEASE_VERSION_CONSTRAINT" >> $GITHUB_STEP_SUMMARY
-      - name: Create the composer main branch alias string.
-        id: alias-main-branch
-        run: |
-          MAIN_BRANCH_ALIAS="${{ inputs.release_branch_name }}-dev"
+          THIS_RELEASE_VERSION_CONSTRAINT=$(echo ${{ inputs.release_branch_name }} | sed 's/\(.*\)\.x/~\1/')
+          echo "THIS_RELEASE_VERSION_CONSTRAINT=${THIS_RELEASE_VERSION_CONSTRAINT}" >> $GITHUB_OUTPUT
+          echo "This release version constraint: $THIS_RELEASE_VERSION_CONSTRAINT" >> $GITHUB_STEP_SUMMARY
+          MAIN_BRANCH_ALIAS="${NEXT_MINOR_RELEASE}.x-dev"
           echo "MAIN_BRANCH_ALIAS=${MAIN_BRANCH_ALIAS}" >> $GITHUB_OUTPUT
           echo "Main branch alias: $MAIN_BRANCH_ALIAS" >> $GITHUB_STEP_SUMMARY
 
@@ -43,12 +51,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Notify dependencies
-        uses: peter-evans/repository-dispatch@1708dda5703a768a0fb0ef6a7a03a0c3805ebc59
+        uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.REPO_DISPATCH_TOKEN }}
           repository: ${{ matrix.repo }}
           event-type: az_quickstart_prep_for_minor_release
-          client-payload: '{"release_branch_name": "${{ inputs.release_branch_name }}" , "next_release_branch_alias_constraint": "${{needs.branch_name_prep.outputs.next_release_branch_alias_constraint}}", "main_branch_alias": "${{needs.branch_name_prep.outputs.main_branch_alias}}"}'
+          client-payload: '{"release_branch_name": "${{ inputs.release_branch_name }}" , "this_release_branch_alias_constraint": "${{needs.branch_name_prep.outputs.this_release_branch_alias_constraint}}", "main_branch_alias": "${{needs.branch_name_prep.outputs.main_branch_alias}}", "next_release_branch_alias_constraint": "${{needs.branch_name_prep.outputs.next_release_branch_alias_constraint}}"}'
 
   prepare_for_new_minor_release:
     name: Prepare for a new minor release
@@ -56,7 +64,7 @@ jobs:
     needs: branch_name_prep
     steps:
     - name: Checkout az_quickstart
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: trackleft/az_quickstart
         ref: main
@@ -65,9 +73,15 @@ jobs:
       run: |
         git checkout -b ${{ inputs.release_branch_name }}
 
-    - name: Check out new branch so we can make a pull request
+    - name: Set up git
       run: |
-        git checkout -b ${{ inputs.release_branch_name }}-prepare-for-minor-release
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+
+    - name: Push new release branch to GitHub
+      run: |
+        git commit --allow-empty -m "Prepare for new minor release ${{ inputs.release_branch_name }}"
+        git push origin -u ${{ inputs.release_branch_name }}
 
     - name: Update DDev config in release branch
       run: |
@@ -82,7 +96,7 @@ jobs:
     - name: Update Create Release workflow yml in release branch
       run: |
         NEW_VERSION=${{ inputs.release_branch_name }}
-        sed -i "s|git clone https://github.com/az-digital/az-quickstart-scaffolding.git az_quickstart|git clone -b $NEW_VERSION https://github.com/az-digital/az-quickstart-scaffolding.git az_quickstart|" .github/workflows/create-release.yml
+        sed -i "s|git clone https://github.com/trackleft/az-quickstart-scaffolding.git az_quickstart|git clone -b $NEW_VERSION https://github.com/trackleft/az-quickstart-scaffolding.git az_quickstart|" .github/workflows/create-release.yml
 
     - name: Update Lando config in release branch
       run: |
@@ -94,42 +108,36 @@ jobs:
         NEW_VERSION=${{ inputs.release_branch_name }}
         sed -i "s/SCAFFOLD_BRANCH=main/SCAFFOLD_BRANCH=$NEW_VERSION/g" .probo.yaml
 
-    - uses: php-actions/composer@v6
+    - name: Setup PHP with composer v2
+      uses: shivammathur/setup-php@v2
       with:
-        command: config extra.branch-alias.dev-main ${{ inputs.release_branch_name }}-dev
+         php-version: '8.1'
+         tools: composer:v2
 
-    - name: Add changed files to release branch commit
+    - name: Update dev branch alias via Composer
       run: |
-        git diff
-        git add .ddev/commands/web/install
-        git add .github/workflows/security.yml
-        git add .github/workflows/create-release.yml
-        git add .lando.yml
-        git add .probo.yaml
-        git add composer.json
+        composer config extra.branch-alias.dev-main ${{ needs.branch_name_prep.outputs.next_minor_release }}.x-dev
 
-    - name: Set up git
-      run: |
-        git config user.name github-actions
-        git config user.email github-actions@github.com
-
-    # - name: Push new release branch to GitHub
-    #   run: |
-    #     git commit --allow-empty -m "Prepare for new minor release ${{ inputs.release_branch_name }}"
-    #     git push origin -u ${{ inputs.release_branch_name }}
-
-    # - name: Push required changes to new branch so we can make a pull request
-    #   uses: peter-evans/create-pull-request@v5
-    #   with:
-    #     title: Prepare repository for new minor release branch ${{ inputs.release_branch_name }}
-    #     commit-message: Prepare repository for new minor release branch ${{ inputs.release_branch_name }}
-    #     branch: ${{ inputs.release_branch_name }}-prepare-for-minor-release
-    #     base: ${{ inputs.release_branch_name }}
-    #     delete-branch: true
-
-
+    - name: Create pull request for new release branch updates
+      uses: peter-evans/create-pull-request@v5
+      with:
+        title: Prepare repository for new minor release branch ${{ inputs.release_branch_name }}
+        commit-message: Prepare repository for new minor release branch ${{ inputs.release_branch_name }}
+        branch: ${{ inputs.release_branch_name }}-prepare-for-minor-release
+        base: ${{ inputs.release_branch_name }}
+        delete-branch: true
+        labels: |
+          ${{ inputs.release_branch_name }} only
+        add-paths: |
+          .ddev/commands/web/install
+          .github/workflows/security.yml
+          .github/workflows/create-release.yml
+          .lando.yml
+          .probo.yaml
+          composer.json
+          
   update_previous_release_branches:
-    needs: prepare_for_new_minor_release
+    needs: [prepare_for_new_minor_release, branch_name_prep]
     runs-on: ubuntu-latest
     name: Update `${{ matrix.previous_version }}` release branch.
     strategy:
@@ -137,36 +145,28 @@ jobs:
         previous_version: [2.7.x, 2.6.x, 2.5.x, 2.4.x, 2.3.x, 2.2.x, 2.1.x, 2.0.x]
     steps:
       - name: Update previous release branch `${{ matrix.previous_version }}`
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ matrix.previous_version }}
+
       - name: Set up Git
         run: |
           git config user.name "GitHub Action"
           git config user.email "action@github.com"
 
-      - name: Check out new branch so we can make a pull request
+      - name: Update dev branch alias via Composer
         run: |
-          git checkout -b ${{ matrix.previous_version }}-update-for-${{ inputs.release_branch_name }}
+          composer config extra.branch-alias.dev-main ${{ needs.branch_name_prep.outputs.next_minor_release }}.x-dev
 
-      - name: Show git diff
-        run: git diff ${{ matrix.previous_version }}
-
-      - uses: php-actions/composer@v6
+      - name: Create pull request for previous release branch updates
+        uses: peter-evans/create-pull-request@v5
         with:
-          command: config extra.branch-alias.dev-main ${{ inputs.release_branch_name }}-dev
-      - name: Show git status
-        run: |
-          git status
-
-      - name: Show git diff
-        run: git diff
-
-      # - name: Push required changes to new branch so we can make a pull request
-      #   uses: peter-evans/create-pull-request@v5
-      #   with:
-      #     title: Prepare ${{ matrix.previous_version }} branch for new minor release branch ${{ inputs.release_branch_name }}
-      #     commit-message: Prepare ${{ matrix.previous_version }} branch for new minor release branch ${{ inputs.release_branch_name }}
-      #     branch: ${{ matrix.previous_version }}-update-for-${{ inputs.release_branch_name }}
-      #     base: ${{ matrix.previous_version }}
-      #     delete-branch: true
+          title: Prepare ${{ matrix.previous_version }} branch for new minor release branch ${{ inputs.release_branch_name }}
+          commit-message: Prepare ${{ matrix.previous_version }} branch for new minor release branch ${{ inputs.release_branch_name }}
+          branch: ${{ matrix.previous_version }}-update-for-${{ inputs.release_branch_name }}
+          base: ${{ matrix.previous_version }}
+          delete-branch: true
+          labels: |
+            ${{ matrix.previous_version }} only
+          add-paths: |
+            composer.json
