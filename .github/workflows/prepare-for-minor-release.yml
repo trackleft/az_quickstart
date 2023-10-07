@@ -101,12 +101,12 @@ jobs:
     - name: Update Create Release workflow yml in release branch
       run: |
         NEW_VERSION=${{ inputs.release_branch_name }}
-        sed -i "s|git clone https://github.com/trackleft/az-quickstart-scaffolding.git az_quickstart|git clone -b $NEW_VERSION https://github.com/trackleft/az-quickstart-scaffolding.git az_quickstart|" .github/workflows/create-release.yml
+        sed -i "s|git clone https://github.com/az-digital/az-quickstart-scaffolding.git az_quickstart|git clone -b $NEW_VERSION https://github.com/az-digital/az-quickstart-scaffolding.git az_quickstart|" .github/workflows/create-release.yml
 
     - name: Update Lando config in release branch
       run: |
         NEW_VERSION=${{ inputs.release_branch_name }}
-        sed -i "s/SCAFFOLD_BRANCH=main/SCAFFOLD_BRANCH=$NEW_VERSION/g" .lando.yml
+        sed -i '' 's/SCAFFOLD_BRANCH="main"/SCAFFOLD_BRANCH="$NEW_VERSION"/g' .lando.yml
 
     - name: Update Probo config in release branch
       run: |
