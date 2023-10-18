@@ -35,11 +35,11 @@ jobs:
           git push origin ${{ github.event.inputs.version }}
       - name: Build project # This would actually build your project, using zip for an example artifact
         run: |
-          git clone https://github.com/az-digital/az-quickstart-scaffolding.git az_quickstart
+          git clone https://github.com/trackleft/az-quickstart-scaffolding.git az_quickstart
           cd az_quickstart
-          composer config repositories.az_quickstart vcs https://github.com/az-digital/az_quickstart.git
+          composer config repositories.az_quickstart vcs https://github.com/trackleft/az_quickstart.git
           composer config use-github-api false
-          composer require --no-update az-digital/az_quickstart:${{ github.event.inputs.version }}
+          composer require --no-update trackleft/az_quickstart:${{ github.event.inputs.version }}
           composer install --no-dev -o
       - name: Zip Assets
         run: |
