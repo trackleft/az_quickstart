@@ -5,7 +5,11 @@ on:
       version:
         description: The version to tag and release
         required: true
-
+      pre_release:
+        description: Is this a pre-release?
+        required: false
+        default: false
+        type: boolean
 jobs:
   build:
     name: Upload Release Asset
@@ -19,7 +23,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
-      - name: Add version to info file
+      - name: Create Tag
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
@@ -27,7 +31,8 @@ jobs:
           git add az_quickstart.info.yml
           git commit -m "Preparing to tag ${{ github.event.inputs.version }}."
           git push
-          echo "RELEASE_SHA=$(git rev-parse HEAD)" >> ${GITHUB_ENV}
+          git tag ${{ github.event.inputs.version }}
+          git push origin ${{ github.event.inputs.version }}
       - name: Build project # This would actually build your project, using zip for an example artifact
         run: |
           git clone https://github.com/az-digital/az-quickstart-scaffolding.git az_quickstart
@@ -45,14 +50,12 @@ jobs:
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ github.event.inputs.version }}
           name: ${{ github.event.inputs.version }}
-          target_commitish: ${{ env.RELEASE_SHA }}
           draft: false
-          prerelease: false
+          prerelease: ${{ github.event.inputs.pre_release }}
           files: |
             ./az_quickstart.zip
             ./az_quickstart.tar.gz
@@ -70,11 +73,11 @@ jobs:
     strategy:
       matrix:
         repo:
-          - az-digital/az-quickstart-pantheon
+          - trackleft/az-quickstart-pantheon
     runs-on: ubuntu-latest
     steps:
       - name: Notify dependencies
-        uses: peter-evans/repository-dispatch@bf47d102fdb849e755b0b0023ea3e81a44b6f570
+        uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.REPO_DISPATCH_TOKEN }}
           repository: ${{ matrix.repo }}
